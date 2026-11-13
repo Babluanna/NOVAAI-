@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Nova AI — Your Smart AI Assistant</title>
+  <meta name="description" content="Nova AI: Premium dark Chat Mode, visual photo & video analysis, and natural human-like Voice Mode in English, Telugu, and Hindi." />
+  <meta name="theme-color" content="#09090B" />
+  <style>
+    :root {
+      --bg-black: #09090b;
+      --bg-charcoal: #141418;
+      --bg-elevated: #1d1d24;
+      --border-dark: #2a2a34;
+      --text-primary: #f5f5f7;
+      --text-secondary: #9a9aa6;
+      --orange-highlight: #fff3d6;
+      --orange-bright: #ffb347;
+      --orange-core: #ff8c1a;
+      --orange-deep: #ff5e00;
+      --sky-blue: #1d63ed;
+      --sky-light: #60a5fa;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      background-color: var(--bg-black);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .page-shell {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 18px 64px;
+    }
+
+    /* Top Nav */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.125rem;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .brand-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 68% 28%, var(--orange-highlight), var(--orange-bright) 34%, var(--orange-core) 68%, var(--orange-deep));
+      box-shadow: 0 0 18px rgba(255, 140, 26, 0.45);
+      flex-shrink: 0;
+    }
+
+    .mode-switch {
+      display: inline-flex;
+      background: var(--bg-charcoal);
+      border: 1px solid var(--border-dark);
+      border-radius: 999px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .mode-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      min-height: 40px;
+    }
+
+    .mode-btn.active {
+      background: #ffffff;
+      color: var(--bg-black);
+    }
+
+    /* Hero Stage */
+    .hero-card {
+      border-radius: 28px;
+      border: 1px solid var(--border-dark);
+      background: radial-gradient(circle at 50% 24%, rgba(255, 140, 26, 0.08), transparent 55%), var(--bg-charcoal);
+      padding: 42px 24px 36px;
+      text-align: center;
+      transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+    }
+
+    .hero-card.voice-theme {
+      background: radial-gradient(circle at 50% 24%, rgba(59, 130, 246, 0.12), transparent 60%), #ffffff;
+      color: #111318;
+      border-color: #e4e8f0;
+    }
+
+    .orb-stage {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 6px auto 26px;
+      height: 184px;
+    }
+
+    .orange-orb {
+      width: 146px;
+      height: 146px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 68% 30%, var(--orange-highlight) 0%, var(--orange-bright) 28%, var(--orange-core) 60%, var(--orange-deep) 88%, #b83d00 100%);
+      box-shadow:
+        0 0 42px rgba(255, 140, 26, 0.45),
+        0 0 90px rgba(255, 94, 0, 0.22),
+        inset -16px -18px 34px rgba(170, 50, 0, 0.45);
+      animation: orbBreath 3.2s ease-in-out infinite;
+    }
+
+    @keyframes orbBreath {
+      0%, 100% { transform: scale(0.97); }
+      50% { transform: scale(1.04); }
+    }
+
+    #skyOrbCanvas {
+      width: 176px;
+      height: 176px;
+      border-radius: 50%;
+      display: none;
+      box-shadow: 0 18px 46px rgba(29, 99, 237, 0.24);
+    }
+
+    .hero-card.voice-theme .orange-orb {
+      display: none;
+    }
+
+    .hero-card.voice-theme #skyOrbCanvas {
+      display: block;
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border-dark);
+      background: var(--bg-elevated);
+      color: var(--orange-bright);
+      margin-bottom: 16px;
+    }
+
+    .hero-card.voice-theme .badge-pill {
+      background: #f2f4f8;
+      border-color: #e4e8f0;
+      color: var(--sky-blue);
+    }
+
+    h1 {
+      font-size: clamp(1.85rem, 4.5vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+
+    .subtitle {
+      max-width: 560px;
+      margin: 0 auto 28px;
+      font-size: 1rem;
+      color: var(--text-secondary);
+    }
+
+    .hero-card.voice-theme .subtitle {
+      color: #525c6b;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.9375rem;
+      text-decoration: none;
+      color: var(--bg-black);
+      background: linear-gradient(135deg, var(--orange-highlight), var(--orange-bright), var(--orange-core));
+      box-shadow: 0 8px 26px rgba(255, 140, 26, 0.32);
+      transition: transform 0.15s ease;
+    }
+
+    .hero-card.voice-theme .btn-primary {
+      color: #ffffff;
+      background: linear-gradient(135deg, #3b82f6, var(--sky-blue));
+      box-shadow: 0 10px 26px rgba(29, 99, 237, 0.28);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      text-decoration: none;
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-dark);
+    }
+
+    .hero-card.voice-theme .btn-secondary {
+      color: #111318;
+      background: #f2f4f8;
+      border-color: #e4e8f0;
+    }
+
+    .btn-primary:active, .btn-secondary:active {
+      transform: scale(0.97);
+    }
+
+    /* Feature Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .feature-card {
+      background: var(--bg-charcoal);
+      border: 1px solid var(--border-dark);
+      border-radius: 22px;
+      padding: 22px;
+    }
+
+    .feature-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--orange-bright);
+      margin-bottom: 8px;
+    }
+
+    .feature-tag.blue {
+      color: var(--sky-light);
+    }
+
+    .feature-card h2 {
+      font-size: 1.0625rem;
+      font-weight: 650;
+      margin-bottom: 6px;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .footer {
+      margin-top: 34px;
+      text-align: center;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="./">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span>Nova AI</span>
+      </a>
+
+      <div class="mode-switch" role="tablist" aria-label="Preview mode">
+        <button id="chatTabBtn" class="mode-btn active" type="button" role="tab" aria-selected="true">Chat</button>
+        <button id="voiceTabBtn" class="mode-btn" type="button" role="tab" aria-selected="false">Voice</button>
+      </div>
+    </header>
+
+    <section id="heroCard" class="hero-card">
+      <div class="orb-stage">
+        <div class="orange-orb" aria-hidden="true"></div>
+        <canvas id="skyOrbCanvas" width="352" height="352" aria-label="Nova AI Voice Mode Orb"></canvas>
+      </div>
+
+      <span id="badgePill" class="badge-pill">Android App · Kotlin &amp; Jetpack Compose</span>
+      <h1 id="heroTitle">Hi! I'm Nova. What's on your mind today?</h1>
+      <p id="heroSubtitle" class="subtitle">
+        Your Smart AI Assistant — experience streaming conversations, multimodal photo &amp; video analysis,
+        and natural human-like Voice Mode in English, తెలుగు, and हिन्दी.
+      </p>
+
+      <div class="cta-row">
+        <a id="releasesBtn" class="btn-primary" href="https://github.com/babluanna" target="_blank" rel="noopener">
+          Get Android Releases
+        </a>
+        <a id="repoBtn" class="btn-secondary" href="https://github.com/babluanna" target="_blank" rel="noopener">
+          View Source on GitHub
+        </a>
+      </div>
+    </section>
+
+    <section class="grid" aria-label="Nova AI Highlights">
+      <article class="feature-card">
+        <span class="feature-tag">Chat Mode</span>
+        <h2>Minimal Dark Interface</h2>
+        <p>Pure black and charcoal UI with streaming responses, conversation memory, and synced chat history.</p>
+      </article>
+
+      <article class="feature-card">
+        <span class="feature-tag blue">Voice Mode</span>
+        <h2>Natural Human-Like Voice</h2>
+        <p>Expressive neural voice with a living sky-and-cloud orb, tap-to-interrupt barge-in, and English, Telugu &amp; Hindi fluency.</p>
+      </article>
+
+      <article class="feature-card">
+        <span class="feature-tag">Multimodal</span>
+        <h2>Photo &amp; Video Understanding</h2>
+        <p>Attach photos or clips directly in Chat or Voice Mode for instant contextual analysis and spoken answers.</p>
+      </article>
+    </section>
+
+    <footer class="footer">
+      Nova AI · Chat. Talk. Explore.
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      // Auto-resolve GitHub repository and Releases links when hosted on *.github.io/<repo>/
+      const host = window.location.hostname || "";
+      const pathParts = (window.location.pathname || "/").split("/").filter(Boolean);
+      if (host.endsWith(".github.io")) {
+        const owner = host.replace(".github.io", "");
+        const repo = pathParts.length > 0 ? pathParts[0] : "";
+        const repoUrl = repo
+          ? "https://github.com/" + owner + "/" + repo
+          : "https://github.com/" + owner;
+        const releasesUrl = repo ? repoUrl + "/releases" : repoUrl;
+        document.getElementById("repoBtn").href = repoUrl;
+        document.getElementById("releasesBtn").href = releasesUrl;
+      }
+
+      const heroCard = document.getElementById("heroCard");
+      const chatBtn = document.getElementById("chatTabBtn");
+      const voiceBtn = document.getElementById("voiceTabBtn");
+      const heroTitle = document.getElementById("heroTitle");
+      const badgePill = document.getElementById("badgePill");
+
+      chatBtn.addEventListener("click", function () {
+        heroCard.classList.remove("voice-theme");
+        chatBtn.classList.add("active");
+        voiceBtn.classList.remove("active");
+        chatBtn.setAttribute("aria-selected", "true");
+        voiceBtn.setAttribute("aria-selected", "false");
+        badgePill.textContent = "Chat Mode · Smart Assistant";
+        heroTitle.textContent = "Hi! I'm Nova. What's on your mind today?";
+      });
+
+      voiceBtn.addEventListener("click", function () {
+        heroCard.classList.add("voice-theme");
+        voiceBtn.classList.add("active");
+        chatBtn.classList.remove("active");
+        voiceBtn.setAttribute("aria-selected", "true");
+        chatBtn.setAttribute("aria-selected", "false");
+        badgePill.textContent = "Voice Mode · English · తెలుగు · हिन्दी";
+        heroTitle.textContent = "Talk naturally with Nova AI.";
+      });
+
+      // Procedural Living Sky & Cloud Orb preview on Canvas
+      const canvas = document.getElementById("skyOrbCanvas");
+      const ctx = canvas.getContext("2d");
+      let start = performance.now();
+
+      function renderSkyOrb(now) {
+        const t = (now - start) * 0.001;
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+        const r = w / 2;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.clip();
+
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+        skyGrad.addColorStop(0, "#1d62ed");
+        skyGrad.addColorStop(0.55, "#4f95fa");
+        skyGrad.addColorStop(0.85, "#9ac5ff");
+        skyGrad.addColorStop(1, "#dcebff");
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        for (let i = 0; i < 11; i++) {
+          const seed = i * 1.42;
+          const speed = 0.28 + (i % 4) * 0.09;
+          const px = cx + Math.sin(t * speed + seed) * r * 0.54;
+          const py = cy + Math.cos(t * speed * 0.72 + seed * 1.3) * r * 0.24 + r * (0.14 + (i % 3) * 0.13);
+          const pr = r * (0.42 + (i % 4) * 0.12);
+          const g = ctx.createRadialGradient(px, py, 0, px, py, pr);
+          g.addColorStop(0, "rgba(255,255,255,0.88)");
+          g.addColorStop(0.55, "rgba(214,230,255,0.48)");
+          g.addColorStop(1, "rgba(255,255,255,0)");
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(px, py, pr, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+        requestAnimationFrame(renderSkyOrb);
+      }
+
+      requestAnimationFrame(renderSkyOrb);
+    })();
+  </script>
+</body>
+</html>
