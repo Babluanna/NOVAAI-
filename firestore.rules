@@ -1,0 +1,230 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string &&
+             id.size() >= 1 &&
+             id.size() <= 128 &&
+             id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Entity Validation Blueprints
+    function isValidConversation(data) {
+      return data.userId is string &&
+             data.userId.size() >= 1 &&
+             data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.title is string &&
+             data.title.size() >= 1 &&
+             data.title.size() <= 200 &&
+             data.mode is string &&
+             data.mode in ['chat', 'image', 'voice'] &&
+             data.previewText is string &&
+             data.previewText.size() <= 500 &&
+             data.messageCount is int &&
+             data.messageCount >= 0 &&
+             data.messageCount <= 100000 &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidChatMessage(data, conversationId) {
+      return data.userId is string &&
+             data.userId.size() >= 1 &&
+             data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.conversationId is string &&
+             data.conversationId.size() >= 1 &&
+             data.conversationId.size() <= 128 &&
+             data.conversationId == conversationId &&
+             data.role is string &&
+             data.role in ['user', 'model'] &&
+             data.text is string &&
+             data.text.size() <= 50000 &&
+             data.messageType is string &&
+             data.messageType in ['text', 'image_gen', 'image_analysis', 'video_analysis', 'voice'] &&
+             data.modelUsed is string &&
+             data.modelUsed.size() >= 1 &&
+             data.modelUsed.size() <= 100 &&
+             (!('thoughtSummary' in data) || data.thoughtSummary == null || (data.thoughtSummary is string && data.thoughtSummary.size() <= 30000)) &&
+             (!('mediaLocalPath' in data) || data.mediaLocalPath == null || (data.mediaLocalPath is string && data.mediaLocalPath.size() <= 1000)) &&
+             (!('mediaThumbBase64' in data) || data.mediaThumbBase64 == null || (data.mediaThumbBase64 is string && data.mediaThumbBase64.size() <= 200000)) &&
+             (!('audioDurationSec' in data) || data.audioDurationSec == null || (data.audioDurationSec is int && data.audioDurationSec >= 0 && data.audioDurationSec <= 86400)) &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidVoiceRecording(data) {
+      return data.userId is string &&
+             data.userId.size() >= 1 &&
+             data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.conversationId is string &&
+             isValidId(data.conversationId) &&
+             data.title is string &&
+             data.title.size() >= 1 &&
+             data.title.size() <= 200 &&
+             data.userTranscript is string &&
+             data.userTranscript.size() <= 30000 &&
+             data.aiTranscript is string &&
+             data.aiTranscript.size() <= 30000 &&
+             data.durationSeconds is int &&
+             data.durationSeconds >= 0 &&
+             data.durationSeconds <= 86400 &&
+             (!('audioFilePath' in data) || data.audioFilePath == null || (data.audioFilePath is string && data.audioFilePath.size() <= 1000)) &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    // 1. Conversations Collection
+    match /users/{userId}/conversations/{conversationId} {
+      allow get: if isSignedIn() &&
+                    isValidId(userId) &&
+                    isValidId(conversationId) &&
+                    request.auth.uid == userId &&
+                    (resource == null || existing().userId == request.auth.uid);
+
+      allow list: if isSignedIn() &&
+                     request.auth.uid == userId &&
+                     existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(conversationId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll(['userId', 'title', 'mode', 'previewText', 'messageCount', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'title', 'mode', 'previewText', 'messageCount', 'createdAt', 'updatedAt']) &&
+                       isValidConversation(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(conversationId) &&
+                       request.auth.uid == userId &&
+                       isValidConversation(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         // Action: Update conversation metadata (title, mode, preview, messageCount, updatedAt)
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'mode', 'previewText', 'messageCount', 'updatedAt'])
+                       );
+
+      allow delete: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(conversationId) &&
+                       request.auth.uid == userId &&
+                       (resource == null || existing().userId == request.auth.uid);
+
+      // 2. Conversation Messages Subcollection
+      match /messages/{messageId} {
+        allow get: if isSignedIn() &&
+                      isValidId(userId) &&
+                      isValidId(conversationId) &&
+                      isValidId(messageId) &&
+                      request.auth.uid == userId &&
+                      (resource == null || existing().userId == request.auth.uid);
+
+        allow list: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(conversationId) &&
+                         isValidId(messageId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll(['userId', 'conversationId', 'role', 'text', 'messageType', 'modelUsed', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'conversationId', 'role', 'text', 'thoughtSummary', 'messageType', 'modelUsed', 'mediaLocalPath', 'mediaThumbBase64', 'audioDurationSec', 'createdAt', 'updatedAt']) &&
+                         isValidChatMessage(incoming(), conversationId) &&
+                         exists(/databases/$(database)/documents/users/$(userId)/conversations/$(conversationId));
+
+        allow update: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(conversationId) &&
+                         isValidId(messageId) &&
+                         request.auth.uid == userId &&
+                         isValidChatMessage(incoming(), conversationId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().conversationId == existing().conversationId &&
+                         incoming().role == existing().role &&
+                         incoming().createdAt == existing().createdAt &&
+                         (
+                           // Action: Regenerate or update message text/media/thoughts
+                           incoming().diff(existing()).affectedKeys().hasOnly(['text', 'thoughtSummary', 'modelUsed', 'mediaLocalPath', 'mediaThumbBase64', 'audioDurationSec', 'updatedAt'])
+                         );
+
+        allow delete: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(conversationId) &&
+                         isValidId(messageId) &&
+                         request.auth.uid == userId &&
+                         (resource == null || existing().userId == request.auth.uid);
+      }
+    }
+
+    // 3. Voice Recordings Collection
+    match /users/{userId}/voice_recordings/{recordingId} {
+      allow get: if isSignedIn() &&
+                    isValidId(userId) &&
+                    isValidId(recordingId) &&
+                    request.auth.uid == userId &&
+                    (resource == null || existing().userId == request.auth.uid);
+
+      allow list: if isSignedIn() &&
+                     request.auth.uid == userId &&
+                     existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(recordingId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll(['userId', 'conversationId', 'title', 'userTranscript', 'aiTranscript', 'durationSeconds', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'conversationId', 'title', 'userTranscript', 'aiTranscript', 'durationSeconds', 'audioFilePath', 'createdAt', 'updatedAt']) &&
+                       isValidVoiceRecording(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(recordingId) &&
+                       request.auth.uid == userId &&
+                       isValidVoiceRecording(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().conversationId == existing().conversationId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         // Action: Update transcript, title, duration, or audio path
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'userTranscript', 'aiTranscript', 'durationSeconds', 'audioFilePath', 'updatedAt'])
+                       );
+
+      allow delete: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(recordingId) &&
+                       request.auth.uid == userId &&
+                       (resource == null || existing().userId == request.auth.uid);
+    }
+  }
+}

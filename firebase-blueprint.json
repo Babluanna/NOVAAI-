@@ -1,0 +1,189 @@
+{
+  "entities": {
+    "Conversation": {
+      "title": "Conversation",
+      "description": "A multi-turn chat, image generation, or voice session owned by a specific authenticated user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID matching request.auth.uid."
+        },
+        "title": {
+          "type": "string",
+          "description": "Display title of the conversation (1 to 200 characters)."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["chat", "image", "voice"],
+          "description": "Last active interaction mode in this conversation."
+        },
+        "previewText": {
+          "type": "string",
+          "description": "Short preview snippet of the latest message or voice turn."
+        },
+        "messageCount": {
+          "type": "integer",
+          "description": "Number of messages stored in this conversation."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp submitted via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp submitted via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "mode",
+        "previewText",
+        "messageCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "An individual user or Nova AI message, image generation result, multimodal analysis, or synchronized voice turn.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID denormalized for zero-latency local evaluation."
+        },
+        "conversationId": {
+          "type": "string",
+          "description": "ID of the parent conversation."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"],
+          "description": "Author role in the conversation."
+        },
+        "text": {
+          "type": "string",
+          "description": "Text body, prompt, or speech transcript."
+        },
+        "thoughtSummary": {
+          "type": "string",
+          "description": "Optional reasoning summary generated in High Thinking mode."
+        },
+        "messageType": {
+          "type": "string",
+          "enum": ["text", "image_gen", "image_analysis", "video_analysis", "voice"],
+          "description": "Modality of the message."
+        },
+        "modelUsed": {
+          "type": "string",
+          "description": "Gemini model identifier used for this turn."
+        },
+        "mediaLocalPath": {
+          "type": "string",
+          "description": "Optional local app-private file path for attached or generated media."
+        },
+        "mediaThumbBase64": {
+          "type": "string",
+          "description": "Optional compact Base64 JPEG thumbnail (<200KB) for generated or analyzed media."
+        },
+        "audioDurationSec": {
+          "type": "integer",
+          "description": "Optional duration in seconds for spoken voice turns."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp submitted via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp submitted via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "conversationId",
+        "role",
+        "text",
+        "messageType",
+        "modelUsed",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "VoiceRecording": {
+      "title": "VoiceRecording",
+      "description": "A recorded voice conversation transcript and metadata managed in Voice Recorder mode.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID matching request.auth.uid."
+        },
+        "conversationId": {
+          "type": "string",
+          "description": "Linked conversation ID keeping voice and chat synchronized."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the voice session."
+        },
+        "userTranscript": {
+          "type": "string",
+          "description": "Transcribed user speech."
+        },
+        "aiTranscript": {
+          "type": "string",
+          "description": "Transcribed or spoken Nova AI response."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "description": "Duration of the voice session in seconds."
+        },
+        "audioFilePath": {
+          "type": "string",
+          "description": "Optional app-private WAV/PCM recording path for local playback."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp submitted via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp submitted via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "conversationId",
+        "title",
+        "userTranscript",
+        "aiTranscript",
+        "durationSeconds",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Per-user conversations across Chat, Image, and Voice modes."
+    },
+    "/users/{userId}/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Messages and multimodal turns belonging to a user's conversation."
+    },
+    "/users/{userId}/voice_recordings/{recordingId}": {
+      "schema": { "$ref": "#/entities/VoiceRecording" },
+      "description": "Saved voice session transcripts and playback metadata."
+    }
+  }
+}
