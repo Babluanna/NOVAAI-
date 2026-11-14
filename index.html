@@ -254,7 +254,7 @@
       width: 9px;
       height: 9px;
       border-radius: 50%;
-      background: #ef4444;
+      background: var(--text-muted);
       flex-shrink: 0;
     }
 
@@ -334,41 +334,6 @@
       background: #ffffff;
       color: var(--bg-black);
       font-weight: 700;
-    }
-
-    /* API Setup Pill Banner (shown only if no API key configured yet) */
-    .connect-banner {
-      width: calc(100% - 28px);
-      max-width: 720px;
-      margin: 4px auto 0;
-      padding: 10px 14px;
-      border-radius: 16px;
-      background: rgba(255, 140, 26, 0.1);
-      border: 1px solid rgba(255, 179, 71, 0.35);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      font-size: 0.84rem;
-      color: #fde68a;
-      flex-shrink: 0;
-    }
-
-    .connect-banner.hidden {
-      display: none;
-    }
-
-    .connect-banner-btn {
-      border: none;
-      border-radius: 999px;
-      background: var(--orange-core);
-      color: var(--bg-black);
-      font-weight: 700;
-      font-size: 0.78rem;
-      padding: 7px 14px;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
     }
 
     /* Chat Scroll Viewport */
@@ -1115,7 +1080,7 @@
         <button id="openKeySettingsBtn" class="key-status-btn" type="button">
           <span style="display:flex;align-items:center;gap:8px;">
             <span id="apiKeyDot" class="status-dot"></span>
-            <span id="apiKeyLabel">Connect AI Key</span>
+            <span id="apiKeyLabel">Connection &amp; Model</span>
           </span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
         </button>
@@ -1138,11 +1103,6 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
         </button>
       </header>
-
-      <div id="connectBanner" class="connect-banner">
-        <span>Add your free Gemini API key (saved only in this browser) to start live AI chat &amp; voice.</span>
-        <button id="bannerConnectBtn" class="connect-banner-btn" type="button">Connect Key</button>
-      </div>
 
       <section id="chatViewport" class="chat-viewport">
         <div id="emptyState" class="empty-state">
@@ -1262,34 +1222,38 @@
     </div>
   </section>
 
-  <!-- API Key Setup Modal (Dark) -->
+  <!-- Connection & Model Modal (Dark, Sidebar Settings Only) -->
   <div id="apiKeyModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="apiModalTitle">
     <div class="modal-card">
       <div class="modal-title-row">
-        <h2 id="apiModalTitle" class="modal-title">Connect Nova AI</h2>
+        <h2 id="apiModalTitle" class="modal-title">Nova Cloud Settings</h2>
         <button id="closeApiModalBtn" class="icon-circle-btn" type="button" style="width:36px;height:36px;">✕</button>
       </div>
 
       <p class="modal-hint">
-        Paste your free Gemini API key below. It is saved <strong>only inside your own browser's local storage</strong> and is never uploaded to GitHub.
-        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a free key here →</a>
+        For public GitHub Pages sites, deploy the included <strong>cloudflare-worker.js</strong> with your key stored safely as a Cloudflare Secret and set <code>NOVA_PROXY_URL</code> in <code>index.html</code> — visitors can then chat immediately with zero prompts.
       </p>
 
       <div>
-        <label class="field-label" for="apiKeyInput">API Key</label>
-        <input id="apiKeyInput" class="text-input" type="password" placeholder="AIza..." autocomplete="off" />
+        <label class="field-label" for="proxyUrlInput">Cloud Proxy URL (Recommended)</label>
+        <input id="proxyUrlInput" class="text-input" type="url" placeholder="https://nova-ai-proxy.yourname.workers.dev" autocomplete="off" />
+      </div>
+
+      <div>
+        <label class="field-label" for="apiKeyInput">Or Browser-Only Key (Never pushed to GitHub)</label>
+        <input id="apiKeyInput" class="text-input" type="password" placeholder="Optional private key for this browser only" autocomplete="off" />
       </div>
 
       <div>
         <label class="field-label" for="modelSelectInput">Chat Model</label>
         <select id="modelSelectInput" class="select-input">
-          <option value="gemini-2.5-flash">Fast Conversational (Recommended)</option>
-          <option value="gemini-2.5-flash-lite">Ultra-Fast Lite</option>
+          <option value="gemini-2.5-flash">Nova Fast Conversational (Recommended)</option>
+          <option value="gemini-2.5-flash-lite">Nova Ultra-Fast Lite</option>
         </select>
       </div>
 
-      <button id="saveApiKeyBtn" class="primary-modal-btn" type="button">Save &amp; Start Chatting</button>
-      <button id="clearApiKeyBtn" type="button" style="background:none;border:none;color:var(--text-secondary);font-size:0.84rem;cursor:pointer;padding:4px;">Remove Saved Key</button>
+      <button id="saveApiKeyBtn" class="primary-modal-btn" type="button">Save Settings</button>
+      <button id="clearApiKeyBtn" type="button" style="background:none;border:none;color:var(--text-secondary);font-size:0.84rem;cursor:pointer;padding:4px;">Clear Saved Browser Settings</button>
     </div>
   </div>
 
@@ -1327,12 +1291,28 @@
 
   <script>
     (function () {
+      /**
+       * DIRECT WEBSITE BACKEND CONFIGURATION (Zero API key prompt for visitors):
+       * Option 1 (Recommended): Deploy cloudflare-worker.js with GEMINI_API_KEY saved inside
+       * Cloudflare Worker Secrets (never inside GitHub) and set NOVA_PROXY_URL below.
+       */
+      const NOVA_PROXY_URL = "";
+
+      /**
+       * Option 2 (Firebase AI Logic Web SDK): Register a Web App in Firebase Console for
+       * project "gen-lang-client-0371918847" and paste its public firebaseConfig object below.
+       */
+      const NOVA_FIREBASE_WEB_CONFIG = null;
+      const NOVA_RECAPTCHA_SITE_KEY = "";
+
       const STORAGE_KEY_API = "nova_web_api_key_v1";
+      const STORAGE_KEY_PROXY = "nova_web_proxy_url_v1";
       const STORAGE_KEY_MODEL = "nova_web_model_v1";
       const STORAGE_KEY_CHATS = "nova_web_conversations_v1";
       const STORAGE_KEY_VOICE = "nova_web_voice_prefs_v1";
 
       const state = {
+        proxyUrl: (NOVA_PROXY_URL || localStorage.getItem(STORAGE_KEY_PROXY) || "").trim(),
         apiKey: localStorage.getItem(STORAGE_KEY_API) || "",
         modelId: localStorage.getItem(STORAGE_KEY_MODEL) || "gemini-2.5-flash",
         conversations: JSON.parse(localStorage.getItem(STORAGE_KEY_CHATS) || "[]"),
@@ -1350,7 +1330,8 @@
         micAnalyser: null,
         speechRec: null,
         activeAudioSource: null,
-        speakingMsgId: null
+        speakingMsgId: null,
+        firebaseAiPromise: null
       };
 
       // DOM References
@@ -1365,8 +1346,6 @@
         openKeySettingsBtn: document.getElementById("openKeySettingsBtn"),
         apiKeyDot: document.getElementById("apiKeyDot"),
         apiKeyLabel: document.getElementById("apiKeyLabel"),
-        connectBanner: document.getElementById("connectBanner"),
-        bannerConnectBtn: document.getElementById("bannerConnectBtn"),
         chatModeTab: document.getElementById("chatModeTab"),
         voiceModeTab: document.getElementById("voiceModeTab"),
         chatViewport: document.getElementById("chatViewport"),
@@ -1409,6 +1388,7 @@
         // Modals
         apiKeyModal: document.getElementById("apiKeyModal"),
         closeApiModalBtn: document.getElementById("closeApiModalBtn"),
+        proxyUrlInput: document.getElementById("proxyUrlInput"),
         apiKeyInput: document.getElementById("apiKeyInput"),
         modelSelectInput: document.getElementById("modelSelectInput"),
         saveApiKeyBtn: document.getElementById("saveApiKeyBtn"),
@@ -1420,6 +1400,14 @@
         langChipGroup: document.getElementById("langChipGroup"),
         themeColorMeta: document.getElementById("themeColorMeta")
       };
+
+      function hasActiveBackend() {
+        return Boolean(
+          (state.proxyUrl && /^https?:\/\//i.test(state.proxyUrl)) ||
+          (NOVA_FIREBASE_WEB_CONFIG && NOVA_FIREBASE_WEB_CONFIG.apiKey && NOVA_FIREBASE_WEB_CONFIG.appId) ||
+          (state.apiKey && state.apiKey.trim().length > 10)
+        );
+      }
 
       function persistChats() {
         try {
@@ -1452,10 +1440,9 @@
       }
 
       function updateApiStatusUI() {
-        const hasKey = Boolean(state.apiKey && state.apiKey.trim().length > 10);
-        els.apiKeyDot.classList.toggle("connected", hasKey);
-        els.apiKeyLabel.textContent = hasKey ? "Nova AI Connected" : "Connect AI Key";
-        els.connectBanner.classList.toggle("hidden", hasKey);
+        const ready = hasActiveBackend();
+        els.apiKeyDot.classList.toggle("connected", ready);
+        els.apiKeyLabel.textContent = ready ? "Nova Cloud Ready" : "Connection & Model";
       }
 
       function renderSidebarHistory() {
@@ -1684,8 +1671,9 @@
       els.sidebarNewChatBtn.addEventListener("click", startNewChat);
       els.topNewChatBtn.addEventListener("click", startNewChat);
 
-      // API Key Modal
+      // Connection Settings Modal (only opened from Sidebar menu)
       function openApiKeyModal() {
+        els.proxyUrlInput.value = state.proxyUrl;
         els.apiKeyInput.value = state.apiKey;
         els.modelSelectInput.value = state.modelId;
         els.apiKeyModal.classList.add("open");
@@ -1699,22 +1687,35 @@
         closeSidebar();
         openApiKeyModal();
       });
-      els.bannerConnectBtn.addEventListener("click", openApiKeyModal);
       els.closeApiModalBtn.addEventListener("click", closeApiKeyModal);
 
       els.saveApiKeyBtn.addEventListener("click", () => {
+        const proxy = els.proxyUrlInput.value.trim();
         const key = els.apiKeyInput.value.trim();
+        state.proxyUrl = proxy || NOVA_PROXY_URL;
         state.apiKey = key;
         state.modelId = els.modelSelectInput.value;
-        localStorage.setItem(STORAGE_KEY_API, key);
+        if (proxy) {
+          localStorage.setItem(STORAGE_KEY_PROXY, proxy);
+        } else {
+          localStorage.removeItem(STORAGE_KEY_PROXY);
+        }
+        if (key) {
+          localStorage.setItem(STORAGE_KEY_API, key);
+        } else {
+          localStorage.removeItem(STORAGE_KEY_API);
+        }
         localStorage.setItem(STORAGE_KEY_MODEL, state.modelId);
         updateApiStatusUI();
         closeApiKeyModal();
       });
 
       els.clearApiKeyBtn.addEventListener("click", () => {
+        state.proxyUrl = NOVA_PROXY_URL || "";
         state.apiKey = "";
+        localStorage.removeItem(STORAGE_KEY_PROXY);
         localStorage.removeItem(STORAGE_KEY_API);
+        els.proxyUrlInput.value = state.proxyUrl;
         els.apiKeyInput.value = "";
         updateApiStatusUI();
         closeApiKeyModal();
@@ -1816,12 +1817,29 @@
         updateComposerButtons();
       }
 
-      async function streamAiTurn(historyMsgs, userText, photo, isVoice, onChunk) {
-        if (!state.apiKey) {
-          openApiKeyModal();
-          throw new Error("Please connect your API key first to start chatting with Nova AI.");
+      async function getFirebaseAiClient() {
+        if (!NOVA_FIREBASE_WEB_CONFIG || !NOVA_FIREBASE_WEB_CONFIG.apiKey || !NOVA_FIREBASE_WEB_CONFIG.appId) {
+          return null;
         }
+        if (!state.firebaseAiPromise) {
+          state.firebaseAiPromise = (async () => {
+            const { initializeApp, getApps } = await import("https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js");
+            const app = getApps().length ? getApps()[0] : initializeApp(NOVA_FIREBASE_WEB_CONFIG);
+            if (NOVA_RECAPTCHA_SITE_KEY) {
+              const { initializeAppCheck, ReCaptchaV3Provider } = await import("https://www.gstatic.com/firebasejs/11.6.0/firebase-app-check.js");
+              initializeAppCheck(app, {
+                provider: new ReCaptchaV3Provider(NOVA_RECAPTCHA_SITE_KEY),
+                isTokenAutoRefreshEnabled: true
+              });
+            }
+            const { getAI, getGenerativeModel, GoogleAIBackend } = await import("https://www.gstatic.com/firebasejs/11.6.0/firebase-ai.js");
+            return { ai: getAI(app, { backend: new GoogleAIBackend() }), getGenerativeModel };
+          })();
+        }
+        return state.firebaseAiPromise;
+      }
 
+      async function streamAiTurn(historyMsgs, userText, photo, isVoice, onChunk) {
         const contents = historyMsgs
           .filter(m => m.text && (m.role === "user" || m.role === "model") && !m.streaming)
           .slice(-20)
@@ -1839,23 +1857,67 @@
         currentParts.push({ text: userText });
         contents.push({ role: "user", parts: currentParts });
 
-        state.abortController = new AbortController();
-        const url = "https://generativelanguage.googleapis.com/v1beta/models/" +
-          encodeURIComponent(state.modelId) + ":streamGenerateContent?alt=sse";
-
-        const res = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": state.apiKey
-          },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: getSystemInstruction(isVoice) }] },
-            contents: contents,
+        // 1. Firebase AI Logic Web SDK (if NOVA_FIREBASE_WEB_CONFIG is populated)
+        const fb = await getFirebaseAiClient();
+        if (fb) {
+          const model = fb.getGenerativeModel(fb.ai, {
+            model: state.modelId,
+            systemInstruction: getSystemInstruction(isVoice),
             generationConfig: isVoice ? { temperature: 0.85, topP: 0.95 } : { temperature: 0.7 }
-          }),
-          signal: state.abortController.signal
-        });
+          });
+          const streamResult = await model.generateContentStream({ contents });
+          let accumulated = "";
+          for await (const chunk of streamResult.stream) {
+            const partText = chunk.text();
+            if (partText) {
+              accumulated += partText;
+              onChunk(accumulated);
+            }
+          }
+          return accumulated;
+        }
+
+        const requestBody = {
+          systemInstruction: { parts: [{ text: getSystemInstruction(isVoice) }] },
+          contents: contents,
+          generationConfig: isVoice ? { temperature: 0.85, topP: 0.95 } : { temperature: 0.7 }
+        };
+
+        state.abortController = new AbortController();
+        let res;
+
+        // 2. Serverless Cloud Proxy (Cloudflare Worker — keeps key hidden from GitHub)
+        if (state.proxyUrl && /^https?:\/\//i.test(state.proxyUrl)) {
+          res = await fetch(state.proxyUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "chat",
+              model: state.modelId,
+              payload: requestBody
+            }),
+            signal: state.abortController.signal
+          });
+        } else if (state.apiKey && state.apiKey.trim().length > 10) {
+          // 3. Optional browser-local key configured manually in Connection Settings
+          const url = "https://generativelanguage.googleapis.com/v1beta/models/" +
+            encodeURIComponent(state.modelId) + ":streamGenerateContent?alt=sse";
+          res = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": state.apiKey
+            },
+            body: JSON.stringify(requestBody),
+            signal: state.abortController.signal
+          });
+        } else {
+          return "Nova Cloud is not linked to this public GitHub Pages URL yet.\n\n" +
+            "Because GitHub & Google automatically revoke raw API keys published in public HTML files, " +
+            "connect your backend once with zero key prompts for visitors:\n" +
+            "1. Deploy the included `cloudflare-worker.js` file on Cloudflare Workers and add your key as a Cloudflare Secret (`GEMINI_API_KEY`).\n" +
+            "2. Set `NOVA_PROXY_URL` inside `index.html` (or open Sidebar → Connection & Model to test your Worker URL).";
+        }
 
         if (!res.ok) {
           const errJson = await res.json().catch(() => ({}));
@@ -1897,10 +1959,6 @@
         const raw = (overridePrompt != null ? overridePrompt : els.chatInput.value).trim();
         const photo = state.pendingPhoto;
         if (!raw && !photo) return;
-        if (!state.apiKey) {
-          openApiKeyModal();
-          return;
-        }
 
         stopAllSpeech();
         const prompt = raw || "Analyze this image in detail.";
@@ -2039,29 +2097,39 @@
           renderMessages();
         }
 
-        // Try Gemini Neural TTS first if connected
-        if (state.apiKey) {
+        // Try Neural TTS first via Cloud Proxy or optional browser key
+        if ((state.proxyUrl && /^https?:\/\//i.test(state.proxyUrl)) || state.apiKey) {
           try {
-            const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
             const directorPrompt = "Speak warmly, naturally, and expressively as Nova AI without reading stage directions.\n\n#### TRANSCRIPT\n" + clean.slice(0, 1200);
-            const res = await fetch(url, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": state.apiKey
-              },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: directorPrompt }] }],
-                generationConfig: {
-                  responseModalities: ["AUDIO"],
-                  speechConfig: {
-                    voiceConfig: {
-                      prebuiltVoiceConfig: { voiceName: state.voicePrefs.persona || "Aoede" }
-                    }
+            const ttsBody = {
+              contents: [{ parts: [{ text: directorPrompt }] }],
+              generationConfig: {
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                  voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: state.voicePrefs.persona || "Aoede" }
                   }
                 }
-              })
-            });
+              }
+            };
+            const res = (state.proxyUrl && /^https?:\/\//i.test(state.proxyUrl))
+              ? await fetch(state.proxyUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    action: "tts",
+                    model: "gemini-2.5-flash-preview-tts",
+                    payload: ttsBody
+                  })
+                })
+              : await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": state.apiKey
+                  },
+                  body: JSON.stringify(ttsBody)
+                });
 
             if (res.ok) {
               const json = await res.json();
@@ -2266,9 +2334,9 @@
       }
 
       async function processVoiceUserTurn(userText) {
-        if (!state.apiKey) {
-          closeVoiceMode();
-          openApiKeyModal();
+        if (!hasActiveBackend()) {
+          state.voiceStatus = "idle";
+          updateVoiceStatusUI("Link NOVA_PROXY_URL in index.html (via cloudflare-worker.js) to enable live Voice");
           return;
         }
         const photo = state.pendingPhoto;
